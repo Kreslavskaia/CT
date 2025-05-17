@@ -17,4 +17,9 @@ def ct_calibrate(photons, material, sinogram, scale):
 
 	# perform calibration
 
+	I0 = np.sum(photons)  # Total initial intensity
+	Itot = sinogram       # Measured intensity
+
+	sinogram = -np.log(Itot / I0)
+
 	return sinogram
