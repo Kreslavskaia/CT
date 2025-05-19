@@ -19,7 +19,35 @@ def ramp_filter(sinogram, scale, alpha=0.001):
 	m = np.ceil(np.log(2*n-1) / np.log(2))
 	m = int(2 ** m)
 
-	# apply filter to all angles
+	# Frequency axis, normalized to [-1, 1]
+	freqs = np.fft.fftfreq(m)
+	norm_freqs = freqs / np.max(np.abs(freqs))
+
+	# Create Ram-Lak filter
+	filter_ramlak = np.abs(norm_freqs)
+
+	# Apply raised-cosine taper
+	if alpha > 0:
+		filter_ramlak *= np.cos(np.pi * norm_freqs / 2) ** alpha
+
 	print('Ramp filtering')
+
+	# Allocate output array
+	fs = np.zeros_like(sinogram)
+
+	# Apply filter to each angle
+	for i in range(angles):
+		# Zero-pad projection to length m
+		proj = np.zeros(m)
+		proj[:n] = sinogram[i, :]
+
+		# FFT, filter, IFFT
+		proj_fft = np.fft.fft(proj)
+		filtered_fft = proj_fft * filter_ramlak
+		filtered = np.real(np.fft.ifft(filtered_fft))
+
+		# Truncate back to original length
+		fs[i, :] = filtered[:n]
+
+	return fs
 	
-	return sinogram
